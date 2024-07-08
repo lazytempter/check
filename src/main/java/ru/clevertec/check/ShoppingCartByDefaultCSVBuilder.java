@@ -24,25 +24,21 @@ public class ShoppingCartByDefaultCSVBuilder implements ShoppingCartBuilder{
                 } else {
                     customerProducts.put(id,amount);
                 }
-            } else {
-                CashBox.getBadRequestError();
             }
             if (unit.contains("discountCard=")) {
                 int separatorIndex = unit.lastIndexOf('=');
                 discountCardNumber = Integer.parseInt(unit.substring(separatorIndex + 1));
-            } else {
-                CashBox.getBadRequestError();
             }
             if (unit.contains("balanceDebitCard=")) {
                 int separatorIndex = unit.lastIndexOf('=');
                 balanceDebitCard = Double.parseDouble(unit.substring(separatorIndex + 1));
-            } else {
-                CashBox.getBadRequestError();
             }
         }
 
         if (discountCardNumber > 0 && balanceDebitCard > 0 && !customerProducts.isEmpty()) {
             CashBox.buildCheck(discountCardNumber, balanceDebitCard, customerProducts);
+        } else {
+            CashBox.getBadRequestError();
         }
     }
 }
