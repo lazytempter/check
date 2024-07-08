@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ShoppingCartByDefaultCSVBuilder implements ShoppingCartBuilder{
+public class ShoppingCartByFileCSVBuilder implements ShoppingCartBuilder{
+
     @Override
     public void buildShoppingCart(String[] inputData) {
         List<String> testDataList = Arrays.asList(inputData);
@@ -13,6 +14,8 @@ public class ShoppingCartByDefaultCSVBuilder implements ShoppingCartBuilder{
         Integer discountCardNumber = 0;
         double balanceDebitCard = 0;
         Map<Integer, Integer> customerProducts = new HashMap<>();
+        String pathToFile = "";
+        String saveToFile = "";
 
         for (String unit : testDataList) {
             if (unit.contains("-")) {
@@ -24,25 +27,35 @@ public class ShoppingCartByDefaultCSVBuilder implements ShoppingCartBuilder{
                 } else {
                     customerProducts.put(id,amount);
                 }
-            } else {
-                CashBox.getBadRequestError(null);
             }
             if (unit.contains("discountCard=")) {
                 int separatorIndex = unit.lastIndexOf('=');
                 discountCardNumber = Integer.parseInt(unit.substring(separatorIndex + 1));
-            } else {
-                CashBox.getBadRequestError(null);
             }
             if (unit.contains("balanceDebitCard=")) {
                 int separatorIndex = unit.lastIndexOf('=');
                 balanceDebitCard = Double.parseDouble(unit.substring(separatorIndex + 1));
-            } else {
-                CashBox.getBadRequestError(null);
+            }
+            if (unit.contains("pathToFile=")) {
+                int separatorIndex = unit.lastIndexOf('=');
+                pathToFile = unit.substring(separatorIndex + 1);
+            }
+            if (unit.contains("saveToFile=")) {
+                int separatorIndex = unit.lastIndexOf('=');
+                saveToFile = unit.substring(separatorIndex + 1);
             }
         }
 
         if (discountCardNumber > 0 && balanceDebitCard > 0 && !customerProducts.isEmpty()) {
-            CashBox.buildCheck(discountCardNumber, balanceDebitCard, customerProducts, null,null);
+            if ((pathToFile.isEmpty() && saveToFile.isEmpty()) || saveToFile.isEmpty()) {
+                CashBox.getBadRequestError(null);
+            } else if (pathToFile.isEmpty() && !saveToFile.isEmpty()) {
+                CashBox.getBadRequestError(saveToFile);
+            } else {
+                CashBox.buildCheck(discountCardNumber, balanceDebitCard, customerProducts, pathToFile, saveToFile);
+            }
+        } else {
+            CashBox.getBadRequestError(null);
         }
     }
 }

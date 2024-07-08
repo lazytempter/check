@@ -9,11 +9,11 @@ public class CashBox {
     final static String PATH_TO_PRODUCTS = "./src/main/resources/products.csv";
     final static String PATH_TO_DISCOUNT_CARDS = "./src/main/resources/discountCards.csv";
 
-    public static void buildCheck (Integer discountCardNumber, double balanceDebitCard, Map<Integer, Integer> customerProducts) {
+    public static void buildCheck (Integer discountCardNumber, double balanceDebitCard, Map<Integer, Integer> customerProducts, String pathToFile, String saveToFile) {
 
         boolean isDiscountCard = false;
 
-        Map<Integer,Product> availableProducts = getAvailableProducts();
+        Map<Integer,Product> availableProducts = getAvailableProducts(pathToFile);
         Map<Integer,DiscountCard> availableDiscountCards = getAvailableDiscountCards();
 
         if (discountCardNumber != null && availableDiscountCards.containsKey(discountCardNumber)) {
@@ -23,19 +23,19 @@ public class CashBox {
         List<ShoppingCartProduct> shoppingCart = addProductsToShoppingCart(availableProducts, customerProducts);
         if (!shoppingCart.isEmpty()) {
             if (!isDiscountCard) {
-                getResult(shoppingCart, null, balanceDebitCard);
+                getResult(shoppingCart, null, balanceDebitCard, saveToFile);
             } else {
                 useCustomerDiscountCard(shoppingCart, availableDiscountCards.get(discountCardNumber));
-                getResult(shoppingCart, availableDiscountCards.get(discountCardNumber), balanceDebitCard);
+                getResult(shoppingCart, availableDiscountCards.get(discountCardNumber), balanceDebitCard, saveToFile);
             }
         }
     }
 
-    public static Map<Integer,Product> getAvailableProducts () {
+    public static Map<Integer,Product> getAvailableProducts (String pathToFile) {
 
         Map<Integer,Product> availableProducts = new HashMap<>();
-
-        List<List<String>> products = readData(PATH_TO_PRODUCTS);
+        List<List<String>> products;
+        products = readData(Objects.requireNonNullElse(pathToFile, PATH_TO_PRODUCTS));
         for (List<String> row : products) {
 
             Product product = new Product(
@@ -90,7 +90,7 @@ public class CashBox {
 
                 shoppingCart.add(shoppingCartProduct);
             } else {
-                getBadRequestError();
+                getBadRequestError(null);
                 shoppingCart.clear();
                 break;
             }
@@ -107,7 +107,7 @@ public class CashBox {
         }
     }
 
-    public static void getResult(List<ShoppingCartProduct> shoppingCart, DiscountCard discountCard, double balanceDebitCard) {
+    public static void getResult(List<ShoppingCartProduct> shoppingCart, DiscountCard discountCard, double balanceDebitCard, String saveToFile) {
 
         double total = 0;
         double totalDiscount = 0;
@@ -119,9 +119,8 @@ public class CashBox {
         total = (double) Math.round(total * 100) / 100;
         totalDiscount = (double) Math.round(totalDiscount * 100) / 100;
         totalWithDiscount = total - totalDiscount;
-
         if (balanceDebitCard - totalWithDiscount < 0) {
-            try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("error_result.csv"))) {
+            try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(Objects.requireNonNullElse(saveToFile, "error_result.csv")))) {
                 System.out.println(" ");
                 System.out.println("ERROR");
                 System.out.println("NOT ENOUGH MONEY");
@@ -135,7 +134,7 @@ public class CashBox {
             }
         } else {
 
-            try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("result.csv"))) {
+            try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(Objects.requireNonNullElse(saveToFile, "result.csv")))) {
 
                 String date = new SimpleDateFormat("dd.MM.yyyy").format(new Date());
                 String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
@@ -217,8 +216,8 @@ public class CashBox {
         return data;
     }
 
-    public static void getBadRequestError () {
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("result.csv"))) {
+    public static void getBadRequestError (String path) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(Objects.requireNonNullElse(path, "error_result.csv"))))  {
             bufferedWriter.write("ERROR");
             bufferedWriter.newLine();
             bufferedWriter.write("BAD REQUEST");
